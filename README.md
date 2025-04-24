@@ -2,13 +2,18 @@ Here's a script I put together that works better than Lenovo's official software
 
 It also works perfectly with Chrome/Edge's **picture-in-picture** video player, while the built-in gestures do not. If you've never heard of that feature, try it out! Right-click any video (you have to right-click twice on YouTube) and select "picture-in-picture." Last but not least, it adds some shortcuts for your **media controls**, too, since by some inexplicable oversight, Lenovo forgot to add any to the official keyboard.
 
-## Included Shortcuts
+## Shortcuts
 - <u>Shift + Win + Up</u> = Maximize Window
 - <u>Ctrl + Win + Up</u> = Wonderbar Window
+- <u>Win + /</u> = Landscape Mode (Default)
 - <u>Win + \\</u> = Inverse Landscape Mode
 - <u>Ctrl + F1</u> = Play/Pause
 - <u>Ctrl + F2</u> = Prev
 - <u>Ctrl + F3</u> = Next
+
+### Menu Only Commands
+- Top Only (Disable lower display)
+- Bottom Only (Disable upper display)
 
 ## Advantages over built-in gesture
 - Works more reliably, and with nearly all resizable applications.

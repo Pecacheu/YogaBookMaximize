@@ -1,4 +1,4 @@
-; Window Control for Yoga Book 9i v1.1 by https://github.com/Pecacheu
+; Window Control for Yoga Book 9i v1.2 by https://github.com/Pecacheu
 
 #Requires AutoHotkey v2
 #SingleInstance Force
@@ -11,20 +11,62 @@ DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
 ^F2::Send "{Media_Prev}"		; Ctrl + F2 = Prev
 ^F3::Send "{Media_Next}"		; Ctrl + F3 = Next
 
-; Win + \ = Inverse Landscape
-#\:: {
-	; Get Displays
++#Up::Maximize	; Shift + Win + Up = Maximize
+^#Up::WonderWin	; Ctrl + Win + Up = Wonderbar Window
+#/::Norm		; Win + / = Landscape
+#\::RevNorm		; Win + \ = Inverse Landscape
+
+A_TrayMenu.Add()
+A_TrayMenu.Add("Maximize", Maximize)
+A_TrayMenu.Add("Wonderbar Window", WonderWin)
+A_TrayMenu.Add()
+A_TrayMenu.Add("Landscape", Norm)
+A_TrayMenu.Add("Inverse Landscape", RevNorm)
+A_TrayMenu.Add("Top Only", TopOnly)
+A_TrayMenu.Add("Bottom Only", BtmOnly)
+A_TrayMenu.Add()
+A_TrayMenu.Add("-", Ignore)
+
+; Constants
+TPWinName	:= "TouchPadWindow"
+MonName		:= "Lenovo HDR Display"
+MonWidth	:= 2880
+MonHeight	:= 1800
+
+Norm(*) {
 	Mon1 := getMon(1)
 	Mon2 := getMon(2)
-	H := Min(Mon2[3]-Mon2[1], Mon2[4]-Mon2[2])
-	; Set Pos & Rotation
-	ScrSetPos(Mon1[5]["DevName"], 0, 0, 180)
-	ScrSetPos(Mon2[5]["DevName"], 0, -H, 180)
+	ScrSetPos(Mon1[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(Mon2[5]["DevName"], 0, MonHeight, 0, 0)
+	ScrApply(0)
+}
+RevNorm(*) {
+	Mon1 := getMon(1)
+	Mon2 := getMon(2)
+	ScrSetPos(Mon1[5]["DevName"], 0, 0, 180, 0)
+	ScrSetPos(Mon2[5]["DevName"], 0, -MonHeight, 180, 0)
+	ScrApply(0)
+}
+TopOnly(*) {
+	Mon1 := getMon(1)
+	Mon2 := getMon(2)
+	ScrSetPos(Mon1[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(Mon2[5]["DevName"], '', '', '', true)
+	ScrApply(0)
+}
+BtmOnly(*) {
+	Mon1 := getMon(1)
+	Mon2 := getMon(2)
+	ScrSetPos(Mon2[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(Mon1[5]["DevName"], '', '', '', true)
+	ScrApply(0)
+}
+
+Ignore(*) {
 }
 
 ; Inspired by https://stackoverflow.com/a/9830200/470749
-; Shift + Win + Up = Maximize
-+#Up:: {
+Maximize(*) {
 	; Display
 	Mon1 := getMon(1)
 	Mon2 := getMon(2)
@@ -52,16 +94,13 @@ DllCall("SetThreadDpiAwarenessContext", "ptr", -3, "ptr")
 	BlockInput(False)
 }
 
-; Ctrl + Win + Up = Wonderbar Window
-^#Up:: wonderWin()
-
-wonderWin() {
+WonderWin(*) {
 	; Display
 	Mon := getMon(2)
 	X := Mon[1], Y := Mon[2], W := Mon[3]-X, H := Mon[4]-Y
 	W += 24
 	; Get Windows
-	TID := WinExist("TouchPadWindow")
+	TID := WinExist(TPWinName)
 	WID := WinExist("A")
 	if !WID || !WinGetTitle()
 		Return ; Avoid System/Explorer Window
@@ -91,23 +130,23 @@ wonderWin() {
 getMon(Num) {
 	MCnt := MonitorGetCount()
 	VCnt := 0
-	Loop MCnt {
-		EnumDisplayDevices(A_Index-1, &Dev)
-		if Dev["DevString"]=="Lenovo HDR Display" {
+	while EnumDisplayDevices(A_Index-1, &Dev) {
+		if Dev["DevString"]==MonName {
 			DI := False
 			Loop MCnt {
 				DN := MonitorGetName(A_Index)
-				If InStr(Dev["DevName"], DN) {
-					Dev["DevName"] := DN
+				if InStr(Dev["DevName"], DN) {
 					DI := A_Index
 					Break
 				}
 			}
-			if !DI
-				Throw "No match for display " Dev["DevName"]
 			VCnt++
 			if VCnt == Num {
-				MonitorGet(DI, &L, &T, &R, &B)
+				if DI
+					MonitorGet(DI, &L, &T, &R, &B)
+				else
+					L := T := R := B := 0
+				Dev["DevName"] := RegExReplace(Dev["DevName"], "\\\w+$", '')
 				Return [L, T, R, B, Dev, A_Index]
 			}
 		}
@@ -125,18 +164,18 @@ Get display name that matches that found in display settings
 Secondary Monitor
 	https://www.autohotkey.com/board/topic/20084-secondary-monitor
 */
-EDD_GET_DEV_INTERFACE_NAME := 0x00000001,
-	size_lpd		:= 4+4+((32+128+128+128)*2),
-	ofs_cb			:= 0,
-	ofs_DevName		:= 4,
-	len_DevName		:= 32,
-	ofs_DevString	:= 4+(32*2),
-	len_DevString	:= 128,
-	ofs_StateFlags	:= 4+((32+128)*2),
-	ofs_DevID		:= 4+4+((32+128)*2),
-	len_DevID		:= 128,
-	ofs_DevKey		:= 4+4+((32+128+128)*2),
-	len_DevKey		:= 128
+EDD_GET_DEV_INTERFACE_NAME := 0x00000001
+size_lpd		:= 4+4+((32+128+128+128)*2)
+ofs_cb			:= 0
+ofs_DevName		:= 4
+len_DevName		:= 32
+ofs_DevString	:= 4+(32*2)
+len_DevString	:= 128
+ofs_StateFlags	:= 4+((32+128)*2)
+ofs_DevID		:= 4+4+((32+128)*2)
+len_DevID		:= 128
+ofs_DevKey		:= 4+4+((32+128+128)*2)
+len_DevKey		:= 128
 
 EnumDisplayDevices(iDevNum, &dev) {
 	dev := ""
@@ -150,28 +189,37 @@ EnumDisplayDevices(iDevNum, &dev) {
 	lpDisDev.__New(size_lpd,0), NumPut("UInt",size_lpd,lpDisDev,ofs_cb)
 	lpDev := Buffer(len_DevName*2,0), StrPut(DevName, lpDev, len_DevName)
 	dwFlags := EDD_GET_DEV_INTERFACE_NAME
-	DllCall("EnumDisplayDevicesW","Ptr",lpDev.Ptr,"UInt",0,"Ptr",lpDisDev.Ptr,"UInt",dwFlags)
-	For k in dev := Map("cb",0,"DevName","","DevString","","StateFlags",0,"DevID","","DevKey","") {
-		Switch k {
-			case "cb","StateFlags": dev[k] := NumGet(lpDisDev, ofs_%k%,"UInt")
-			default: dev[k] := StrGet(lpDisDev.Ptr+ofs_%k%, len_%k%)
+	res := DllCall("EnumDisplayDevicesW","Ptr",lpDev.Ptr,"UInt",0,"Ptr",lpDisDev.Ptr,"UInt",dwFlags)
+	if(res) {
+		For k in dev := Map("cb",0,"DevName","","DevString","","StateFlags",0,"DevID","","DevKey","") {
+			Switch k {
+				case "cb","StateFlags": dev[k] := NumGet(lpDisDev, ofs_%k%,"UInt")
+				default: dev[k] := StrGet(lpDisDev.Ptr+ofs_%k%, len_%k%)
+			}
 		}
 	}
-	Return !!dev["StateFlags"]
+	Return res
 }
 
-DM_POSITION := 0x00000020,
-	DM_DISPORIENT := 0x00000080,
-	CDS_SET_PRIMARY	:= 0x00000010,
-	size_dm		:= 220,
-	ofs_dmSize	:= 68,
-	ofs_dmFld	:= 72,
-	ofs_x		:= 76,
-	ofs_y		:= 80,
-	ofs_r		:= 84
+DM_POSITION			:= 0x00000020
+DM_DISPORIENT		:= 0x00000080
+DM_PELSWIDTH		:= 0x00080000
+DM_PELSHEIGHT		:= 0x00100000
+CDS_UPDATEREGISTRY	:= 0x00000001
+CDS_SET_PRIMARY		:= 0x00000010
+CDS_NORESET			:= 0x10000000
+CDS_RESET			:= 0x20000000
+size_dm		:= 220
+ofs_dmSize	:= 68
+ofs_dmFld	:= 72
+ofs_x		:= 76
+ofs_y		:= 80
+ofs_r		:= 84
+ofs_w		:= 172
+ofs_h		:= 176
 
 ; Inspired by BoBo @ AutoHotKey Forums
-ScrSetPos(devName, xPos, yPos, rDeg) {
+ScrSetPos(devName, xPos, yPos, rDeg, disable) {
 	switch rDeg {
 		Case 90: mode := 1
 		Case 180: mode := 2
@@ -184,19 +232,33 @@ ScrSetPos(devName, xPos, yPos, rDeg) {
 	StrPut(devName, dStr, len_DevName, "UTF-16")
 	DllCall("EnumDisplaySettingsW", "Ptr", dStr.Ptr, "Int", 0, "Ptr", DEVMODE.Ptr)
 	dmFields := 0
-	dwFlags := 0
-	if IsInteger(xPos) && IsInteger(yPos) {
-		if xPos == 0 && yPos == 0
-			dwFlags := CDS_SET_PRIMARY
-		NumPut("Int", xPos, DEVMODE, ofs_x) ; dmPosition X
-		NumPut("Int", yPos, DEVMODE, ofs_y) ; dmPosition Y
-		dmFields |= DM_POSITION
-	}
-	if IsInteger(rDeg) {
-		NumPut("UInt", mode, DEVMODE, ofs_r) ; dmDisplayOrientation
-		dmFields |= DM_DISPORIENT
+	dwFlags := CDS_NORESET | CDS_UPDATEREGISTRY
+	if disable == true {
+		NumPut("UInt", 0, DEVMODE, ofs_w) ; dmPelsWidth
+		NumPut("UInt", 0, DEVMODE, ofs_h) ; dmPelsHeight
+		dmFields |= DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT
+	} else {
+		if IsInteger(xPos) && IsInteger(yPos) {
+			MsgBox("Set " devName " to " xPos " x " yPos)
+			if xPos == 0 && yPos == 0
+				dwFlags |= CDS_SET_PRIMARY
+			NumPut("Int", xPos, DEVMODE, ofs_x) ; dmPosition X
+			NumPut("Int", yPos, DEVMODE, ofs_y) ; dmPosition Y
+			NumPut("UInt", MonWidth, DEVMODE, ofs_w) ; dmPelsWidth
+			NumPut("UInt", MonHeight, DEVMODE, ofs_h) ; dmPelsHeight
+			dmFields |= DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT
+		}
+		if IsInteger(rDeg) {
+			NumPut("UInt", mode, DEVMODE, ofs_r) ; dmDisplayOrientation
+			dmFields |= DM_DISPORIENT
+		}
 	}
 	NumPut("UInt", dmFields, DEVMODE, ofs_dmFld)
 	DllCall("ChangeDisplaySettingsExW", "Ptr", dStr.Ptr, "Ptr",
 		DEVMODE.Ptr, "Ptr", 0, "UInt", dwFlags, "Ptr", 0)
+}
+ScrApply(force) {
+	dwFlags := force ? CDS_RESET : 0
+	DllCall("ChangeDisplaySettingsExW", "Ptr", 0, "Ptr",
+		0, "Ptr", 0, "UInt", dwFlags, "Ptr", 0)
 }
