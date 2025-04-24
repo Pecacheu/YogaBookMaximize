@@ -5,6 +5,7 @@ It also works perfectly with Chrome/Edge's **picture-in-picture** video player, 
 ## Included Shortcuts
 - <u>Shift + Win + Up</u> = Maximize Window
 - <u>Ctrl + Win + Up</u> = Wonderbar Window
+- <u>Win + \\</u> = Inverse Landscape Mode
 - <u>Ctrl + F1</u> = Play/Pause
 - <u>Ctrl + F2</u> = Prev
 - <u>Ctrl + F3</u> = Next
