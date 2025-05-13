@@ -25,3 +25,5 @@ It also works perfectly with Chrome/Edge's **picture-in-picture** video player, 
 
 ## How to Install
 Download the AHK file above. I suggest you copy it to your Startup folder so it runs automatically, but you'll need to run in manually at least once. Press **WIN + R** and type `shell:startup` into the prompt, that will open your Startup folder. You will also need to install [AutoHotKey v2](https://autohotkey.com) if you've never used it before.
+
+**Note:** You may need to change `MonTopID` and `MonBtmID`, I'm not sure how universal these are. To see all the IDs, use `PrintIDs()`

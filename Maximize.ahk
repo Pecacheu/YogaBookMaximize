@@ -1,4 +1,4 @@
-; Window Control for Yoga Book 9i v1.2 by https://github.com/Pecacheu
+; Window Control for Yoga Book 9i v1.3 by https://github.com/Pecacheu
 
 #Requires AutoHotkey v2
 #SingleInstance Force
@@ -29,36 +29,37 @@ A_TrayMenu.Add("-", Ignore)
 
 ; Constants
 TPWinName	:= "TouchPadWindow"
-MonName		:= "Lenovo HDR Display"
+MonTopID	:= "#LEN8390"
+MonBtmID	:= "#LEN8391"
 MonWidth	:= 2880
 MonHeight	:= 1800
 
 Norm(*) {
-	Mon1 := getMon(1)
-	Mon2 := getMon(2)
-	ScrSetPos(Mon1[5]["DevName"], 0, 0, 0, 0)
-	ScrSetPos(Mon2[5]["DevName"], 0, MonHeight, 0, 0)
+	MonT := getMon(MonTopID)
+	MonB := getMon(MonBtmID)
+	ScrSetPos(MonT[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(MonB[5]["DevName"], 0, MonHeight, 0, 0)
 	ScrApply(0)
 }
 RevNorm(*) {
-	Mon1 := getMon(1)
-	Mon2 := getMon(2)
-	ScrSetPos(Mon1[5]["DevName"], 0, 0, 180, 0)
-	ScrSetPos(Mon2[5]["DevName"], 0, -MonHeight, 180, 0)
+	MonT := getMon(MonTopID)
+	MonB := getMon(MonBtmID)
+	ScrSetPos(MonT[5]["DevName"], 0, 0, 180, 0)
+	ScrSetPos(MonB[5]["DevName"], 0, -MonHeight, 180, 0)
 	ScrApply(0)
 }
 TopOnly(*) {
-	Mon1 := getMon(1)
-	Mon2 := getMon(2)
-	ScrSetPos(Mon1[5]["DevName"], 0, 0, 0, 0)
-	ScrSetPos(Mon2[5]["DevName"], '', '', '', true)
+	MonT := getMon(MonTopID)
+	MonB := getMon(MonBtmID)
+	ScrSetPos(MonT[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(MonB[5]["DevName"], '', '', '', true)
 	ScrApply(0)
 }
 BtmOnly(*) {
-	Mon1 := getMon(1)
-	Mon2 := getMon(2)
-	ScrSetPos(Mon2[5]["DevName"], 0, 0, 0, 0)
-	ScrSetPos(Mon1[5]["DevName"], '', '', '', true)
+	MonT := getMon(MonTopID)
+	MonB := getMon(MonBtmID)
+	ScrSetPos(MonB[5]["DevName"], 0, 0, 0, 0)
+	ScrSetPos(MonT[5]["DevName"], '', '', '', true)
 	ScrApply(0)
 }
 
@@ -68,10 +69,10 @@ Ignore(*) {
 ; Inspired by https://stackoverflow.com/a/9830200/470749
 Maximize(*) {
 	; Display
-	Mon1 := getMon(1)
-	Mon2 := getMon(2)
-	X := Min(Mon1[1],Mon2[1]), Y := Min(Mon1[2],Mon2[2])
-	W := Max(Mon1[3],Mon2[3])-X, H := Max(Mon1[4],Mon2[4])-Y
+	MonT := getMon(MonTopID)
+	MonB := getMon(MonBtmID)
+	X := Min(MonT[1],MonB[1]), Y := Min(MonT[2],MonB[2])
+	W := Max(MonT[3],MonB[3])-X, H := Max(MonT[4],MonB[4])-Y
 	X -= 12, Y -= 12, W += 24, H += 24
 	; Window
 	WID := WinExist("A")
@@ -127,11 +128,10 @@ WonderWin(*) {
 	BlockInput(False)
 }
 
-getMon(Num) {
+getMon(ID) {
 	MCnt := MonitorGetCount()
-	VCnt := 0
 	while EnumDisplayDevices(A_Index-1, &Dev) {
-		if Dev["DevString"]==MonName {
+		if InStr(Dev["DevID"], ID) {
 			DI := False
 			Loop MCnt {
 				DN := MonitorGetName(A_Index)
@@ -140,18 +140,23 @@ getMon(Num) {
 					Break
 				}
 			}
-			VCnt++
-			if VCnt == Num {
-				if DI
-					MonitorGet(DI, &L, &T, &R, &B)
-				else
-					L := T := R := B := 0
-				Dev["DevName"] := RegExReplace(Dev["DevName"], "\\\w+$", '')
-				Return [L, T, R, B, Dev, A_Index]
-			}
+			if DI
+				MonitorGet(DI, &L, &T, &R, &B)
+			else
+				L := T := R := B := 0
+			Dev["DevName"] := RegExReplace(Dev["DevName"], "\\\w+$", '')
+			Return [L, T, R, B, Dev, A_Index]
 		}
 	}
-	Throw "Could not find display #" Num "!"
+	Throw "Could not find display " ID "!"
+}
+
+PrintIDs() {
+	Mons := ''
+	while EnumDisplayDevices(A_Index-1, &Dev) {
+		Mons := Mons Dev["DevID"] "`n"
+	}
+	MsgBox(Mons)
 }
 
 /*
@@ -239,7 +244,6 @@ ScrSetPos(devName, xPos, yPos, rDeg, disable) {
 		dmFields |= DM_POSITION | DM_PELSWIDTH | DM_PELSHEIGHT
 	} else {
 		if IsInteger(xPos) && IsInteger(yPos) {
-			MsgBox("Set " devName " to " xPos " x " yPos)
 			if xPos == 0 && yPos == 0
 				dwFlags |= CDS_SET_PRIMARY
 			NumPut("Int", xPos, DEVMODE, ofs_x) ; dmPosition X
